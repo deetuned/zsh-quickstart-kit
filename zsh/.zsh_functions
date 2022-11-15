@@ -160,5 +160,5 @@ function httpserver() {
 if [ -f ~/.zsh_functions.local ]; then
   source .zsh_functions.local
   echo ".zsh_functions.local is deprecated and will stop working after June 1st, 2022."
-  echo "Make entries in ~/.zshrc.d instead. See https://github.com/unixorn/zsh-quickstart-kit#zshrcd for more details."
+  echo "Make entries in $ZDOTDIR/zshrc.d instead. See https://github.com/unixorn/zsh-quickstart-kit#zshrcd for more details."
 fi

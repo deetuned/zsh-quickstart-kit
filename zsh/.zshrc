@@ -44,14 +44,19 @@ if [[ -r ~/.powerlevel9k_font_mode ]]; then
   POWERLEVEL9K_MODE=$(head -1 ~/.powerlevel9k_font_mode)
 fi
 
-# Unset COMPLETION_WAITING_DOTS in a file in ~/.zshrc.d if you want red dots to be displayed while waiting for completion
+# Unset COMPLETION_WAITING_DOTS in a file in $ZDOTDIR/zshrc.d if you want red dots to be displayed while waiting for completion
 export COMPLETION_WAITING_DOTS="true"
 
+# Create zsh-quickstart-kit config directory
+if [[ ! -d $ZDOTDIR/.zqs ]]; then
+  mkdir -p $ZDOTDIR/.zqs
+fi
+
 # Provide a unified way for the quickstart to get/set settings.
-if [[ -f ~/.zqs-settings-path ]]; then
-  _ZQS_SETTINGS_DIR=$(cat ~/.zqs-settings-path)
+if [[ -f $ZDOTDIR/.zqs/zqs-settings-path ]]; then
+  _ZQS_SETTINGS_DIR=$(cat $ZDOTDIR/.zqs/zqs-settings-path)
 else
-  _ZQS_SETTINGS_DIR="${HOME}/.zqs-settings"
+  _ZQS_SETTINGS_DIR="${ZDOTDIR}/.zqs/zqs-settings"
 fi
 export _ZQS_SETTINGS_DIR
 
@@ -59,8 +64,7 @@ export _ZQS_SETTINGS_DIR
 # them is likely to break things badly.
 
 _zqs-trigger-init-rebuild() {
-  rm -f ~/.zgen/init.zsh
-  rm -f ~/.zgenom/init.zsh
+  rm -f ~/.local/share/zgenom/init.zsh
 }
 
 # We need to load shell fragment files often enough to make it a function
@@ -129,20 +133,20 @@ _zqs-purge-setting() {
 
 # Convert the old settings files into new style settings
 function _zqs-update-stale-settings-files() {
-  if [[ -f ~/.zsh-quickstart-use-bullet-train ]]; then
+  if [[ -f $ZDOTDIR/.zqs/zsh-quickstart-use-bullet-train ]]; then
     _zqs-set-setting bullet-train true
-    rm -f ~/.zsh-quickstart-use-bullet-train
-    echo "Converted old ~/.zsh-quickstart-use-bullet-train to new settings system"
+    rm -f $ZDOTDIR/.zqs/zsh-quickstart-use-bullet-train
+    echo "Converted old $ZDOTDIR/.zqs/zsh-quickstart-use-bullet-train to new settings system"
   fi
-  if [[ -f ~/.zsh-quickstart-no-omz ]]; then
+  if [[ -f $ZDOTDIR/.zqs/zsh-quickstart-no-omz ]]; then
     _zqs-set-setting load-omz-plugins false
-    rm -f ~/.zsh-quickstart-no-omz
-    echo "Converted old ~/.zsh-quickstart-no-omz to new settings system"
+    rm -f $ZDOTDIR/.zqs/zsh-quickstart-no-omz
+    echo "Converted old $ZDOTDIR/.zqs/zsh-quickstart-no-omz to new settings system"
   fi
-  if [[ -f ~/.zsh-quickstart-no-zmv ]]; then
+  if [[ -f $ZDOTDIR/.zqs/zsh-quickstart-no-zmv ]]; then
     _zqs-set-setting no-zmv true
-    rm -f ~/.zsh-quickstart-no-zmv
-    echo "Converted old ~/.zsh-quickstart-no-zmv to new settings system"
+    rm -f $ZDOTDIR/.zqs/zsh-quickstart-no-zmv
+    echo "Converted old $ZDOTDIR/.zqs/zsh-quickstart-no-zmv to new settings system"
   fi
 }
 
@@ -156,7 +160,7 @@ function zsh-quickstart-select-bullet-train() {
 }
 
 function zsh-quickstart-select-powerlevel10k() {
-  rm -f ~/.zsh-quickstart-use-bullet-train
+  rm -f $ZDOTDIR/.zqs/zsh-quickstart-use-bullet-train
   _zqs-set-setting powerlevel10k true
   _zqs-set-setting bullet-train false
   _zqs-trigger-init-rebuild
@@ -182,13 +186,13 @@ function _zqs-disable-zmv-autoloading() {
 }
 
 function zsh-quickstart-disable-omz-plugins() {
-  rm -f ~/.zsh-quickstart-no-omz
+  rm -f $ZDOTDIR/.zqs/zsh-quickstart-no-omz
   _zqs-set-setting load-omz-plugins false
   _zqs-trigger-init-rebuild
 }
 
 function zsh-quickstart-enable-omz-plugins() {
-  rm -f ~/.zsh-quickstart-no-omz
+  rm -f $ZDOTDIR/.zqs/zsh-quickstart-no-omz
   _zqs-set-setting load-omz-plugins true
   _zqs-trigger-init-rebuild
 }
@@ -227,7 +231,7 @@ unsetopt correctall
 PATH="$PATH:/sbin:/usr/sbin:/bin:/usr/bin"
 
 # If you need to add extra directories to $PATH that are not checked for
-# here, add a file in ~/.zshrc.d - then you won't have to maintain a
+# here, add a file in $ZDOTDIR/zshrc.d - then you won't have to maintain a
 # fork of the kit.
 
 # Conditional PATH additions
@@ -255,7 +259,7 @@ do
 done
 export PATH
 
-# We will dedupe $PATH after loading ~/.zshrc.d/* so that any duplicates
+# We will dedupe $PATH after loading $ZDOTDIR/zshrc.d/* so that any duplicates
 # added there get deduped too.
 
 # Deal with brew if it's installed. Note - brew can be installed outside
@@ -346,15 +350,15 @@ if [[ -z "$SSH_CLIENT" ]] || can_haz keychain; then
 fi
 
 # Load helper functions before we load zgenom setup
-if [ -r ~/.zsh_functions ]; then
-  source ~/.zsh_functions
+if [ -r $ZDOTDIR/.zsh_functions ]; then
+  source $ZDOTDIR/.zsh_functions
 fi
 
 # Make it easy to prepend your own customizations that override the
 # quickstart's defaults by loading all files from the
-# ~/.zshrc.pre-plugins.d directory
-mkdir -p ~/.zshrc.pre-plugins.d
-load-shell-fragments ~/.zshrc.pre-plugins.d
+# $ZDOTDIR/zshrc.pre-plugins.d directory
+mkdir -p $ZDOTDIR/zshrc.pre-plugins.d
+load-shell-fragments $ZDOTDIR/zshrc.pre-plugins.d
 
 # macOS doesn't have a python by default. This makes the omz python and
 # zsh-completion-generator plugins sad, so if there isn't a python, alias
@@ -373,8 +377,8 @@ fi
 
 # Now that we have $PATH set up and ssh keys loaded, configure zgenom.
 # Start zgenom
-if [ -f ~/.zgen-setup ]; then
-  source ~/.zgen-setup
+if [ -f $ZDOTDIR/.zgen-setup ]; then
+  source $ZDOTDIR/.zgen-setup
 fi
 
 # Undo the hackery for issue 180
@@ -386,7 +390,7 @@ fi
 
 # Set some history options
 #
-# You can customize these by putting a file in ~/.zshrc.d with
+# You can customize these by putting a file in $ZDOTDIR/zshrc.d with
 # different settings - those files are loaded later specifically to
 # make overriding these (and things set by plugins) easy without having
 # to maintain a fork.
@@ -410,7 +414,7 @@ setopt share_history
 # adding a file to ~/.zshrc.d that changes these variables.
 HISTSIZE=100000
 SAVEHIST=100000
-HISTFILE=~/.zsh_history
+HISTFILE="${ZDOTDIR}/.zhistory"
 export HISTIGNORE="ls:cd:cd -:pwd:exit:date:* --help"
 
 # Set some options about directories
@@ -439,7 +443,7 @@ REPORTTIME=2
 TIMEFMT="%U user %S system %P cpu %*Es total"
 
 # How often to check for an update. If you want to override this, the
-# easiest way is to add a script fragment in ~/.zshrc.d that unsets
+# easiest way is to add a script fragment in $ZDOTDIR/zshrc.d that unsets
 # QUICKSTART_KIT_REFRESH_IN_DAYS.
 QUICKSTART_KIT_REFRESH_IN_DAYS=7
 
@@ -473,8 +477,8 @@ if [ -r ~/.sh_aliases ]; then
 fi
 
 # Stuff only tested on zsh, or explicitly zsh-specific
-if [ -r ~/.zsh_aliases ]; then
-  source ~/.zsh_aliases
+if [ -r $ZDOTDIR/.zsh_aliases ]; then
+  source $ZDOTDIR/.zsh_aliases
 fi
 
 export LOCATE_PATH=/var/db/locate.database
@@ -572,16 +576,16 @@ fi
 # Speed up autocomplete, force prefix mapping
 zstyle ':completion:*' accept-exact '*(N)'
 zstyle ':completion:*' use-cache on
-zstyle ':completion:*' cache-path ~/.zsh/cache
+zstyle ':completion:*' cache-path $ZDOTDIR/.zcache
 zstyle -e ':completion:*:default' list-colors 'reply=("${PREFIX:+=(#bi)($PREFIX:t)*==34=34}:${(s.:.)LS_COLORS}")';
 
 # Load any custom zsh completions we've installed
-if [[ -d ~/.zsh-completions.d ]]; then
-  load-shell-fragments ~/.zsh-completions.d
+if [[ -d $ZDOTDIR/zsh-completions.d ]]; then
+  load-shell-fragments $ZDOTDIR/zsh-completions.d
 fi
-if [[ -d ~/.zsh-completions ]]; then
-  echo '~/.zsh_completions is deprecated in favor of ~/.zsh_completions.d'
-  load-shell-fragments ~/.zsh-completions
+if [[ -d $ZDOTDIR/zsh-completions ]]; then
+  echo '$ZDOTDIR/.zsh_completions is deprecated in favor of $ZDOTDIR/zsh_completions.d'
+  load-shell-fragments $ZDOTDIR/zsh-completions
 fi
 
 # Load zmv
@@ -590,9 +594,9 @@ if [[ $(_zqs-get-setting no-zmv false) == 'false' ]]; then
 fi
 
 # Make it easy to append your own customizations that override the
-# quickstart's defaults by loading all files from the ~/.zshrc.d directory
-mkdir -p ~/.zshrc.d
-load-shell-fragments ~/.zshrc.d
+# quickstart's defaults by loading all files from the $ZDOTDIR/zshrc.d directory
+mkdir -p $ZDOTDIR/zshrc.d
+load-shell-fragments $ZDOTDIR/zshrc.d
 
 # If GOPATH is defined, add it to $PATH
 if [[ -n "$GOPATH" ]]; then
@@ -608,11 +612,11 @@ typeset -aU path;
 # If desk is installed, load the Hook for desk activation
 [[ -n "$DESK_ENV" ]] && source "$DESK_ENV"
 
-# Do selfupdate checking. We do this after processing ~/.zshrc.d to make the
+# Do selfupdate checking. We do this after processing $ZDOTDIR/zshrc.d to make the
 # refresh check interval easier to customize.
 #
 # If they unset QUICKSTART_KIT_REFRESH_IN_DAYS in one of the fragments
-# in ~/.zshrc.d, then we don't do any selfupdate checking at all.
+# in $ZDOTDIR/zshrc.d, then we don't do any selfupdate checking at all.
 
 _load-lastupdate-from-file() {
   local now=$(date +%s)
@@ -626,12 +630,12 @@ _load-lastupdate-from-file() {
 }
 
 _update-zsh-quickstart() {
-  if [[ ! -L ~/.zshrc ]]; then
+  if [[ ! -L $ZDOTDIR/.zshrc ]]; then
     echo ".zshrc is not a symlink, skipping zsh-quickstart-kit update"
   else
-    local _link_loc=$(readlink ~/.zshrc);
-    if [[ "${_link_loc/${HOME}}" == "${_link_loc}" ]]; then
-      pushd $(dirname "${HOME}/$(readlink ~/.zshrc)");
+    local _link_loc=$(readlink ${ZDOTDIR}/.zshrc);
+    if [[ "${_link_loc/${ZDOTDIR}}" == "${_link_loc}" ]]; then
+      pushd $(dirname "${ZDOTDIR}/$(readlink $ZDOTDIR/.zshrc)");
     else
       pushd $(dirname ${_link_loc});
     fi;
@@ -653,7 +657,7 @@ _update-zsh-quickstart() {
           fi
           echo "---- updating $zqs_current_branch ----"
           git pull
-          date +%s >! ~/.zsh-quickstart-last-update
+          date +%s >! "$ZDOTDIR/.zqs/zsh-quickstart-last-update"
           unset zqs_default_branch
           unset zqs_current_branch
         fi
@@ -667,7 +671,7 @@ _update-zsh-quickstart() {
 _check-for-zsh-quickstart-update() {
   local day_seconds=$(expr 24 \* 60 \* 60)
   local refresh_seconds=$(expr "${day_seconds}" \* "${QUICKSTART_KIT_REFRESH_IN_DAYS}")
-  local last_quickstart_update=$(_load-lastupdate-from-file ~/.zsh-quickstart-last-update)
+  local last_quickstart_update=$(_load-lastupdate-from-file "$ZDOTDIR/.zqs/zsh-quickstart-last-update")
 
   if [ ${last_quickstart_update} -gt ${refresh_seconds} ]; then
     echo "It has been $(expr ${last_quickstart_update} / ${day_seconds}) days since your zsh quickstart kit was updated"
@@ -686,7 +690,7 @@ fi
 ZSH_AUTOSUGGEST_CLEAR_WIDGETS+=(bracketed-paste)
 
 # Load iTerm shell integrations if found.
-test -e "${HOME}/.iterm2_shell_integration.zsh" && source "${HOME}/.iterm2_shell_integration.zsh"
+test -e "${ZDOTDIR}/.iterm2.zsh" && source "${ZDOTDIR}/.iterm2.zsh"
 
 # To customize your prompt, run `p10k configure` or edit ~/.p10k.zsh.
 if [[ ! -f ~/.p10k.zsh ]]; then
