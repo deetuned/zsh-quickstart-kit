@@ -135,7 +135,7 @@ load-starter-plugin-list() {
 
   if [[ -f ~/.zqs-additional-plugins ]]; then
     separator='\n'
-    plugins=(${(ps.$separator.)$(cat $ZDOTDIR/zqs/zqs-additional-plugins)})
+    plugins=(${(ps.$separator.)$(cat $ZDOTDIR/.zqs/zqs-additional-plugins)})
 
     for plugin in $plugins; do
       zgenom load "$plugin"
