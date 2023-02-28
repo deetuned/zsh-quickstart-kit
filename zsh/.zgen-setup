@@ -23,7 +23,7 @@ fi
 # is unclean.
 if [[ -z "$ZGEN_DIR" && -z "$XDG_DATA_HOME" ]]; then
   ZGEN_DIR=$HOME/.zgenom
-elif [[ -z "$ZGEN_DIR" ]]
+elif [[ -z "$ZGEN_DIR" ]]; then
   ZGEN_DIR=$XDG_DATA_HOME/.zgenom
 fi
 
