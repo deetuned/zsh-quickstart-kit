@@ -160,7 +160,7 @@ function zsh-quickstart-select-bullet-train() {
 }
 
 function zsh-quickstart-select-powerlevel10k() {
-  rm -f $ZDOTDIR/.zqs/zsh-quickstart-use-bullet-train
+  rm -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-use-bullet-train
   _zqs-set-setting powerlevel10k true
   _zqs-set-setting bullet-train false
   _zqs-trigger-init-rebuild
@@ -478,7 +478,7 @@ fi
 
 # Stuff only tested on zsh, or explicitly zsh-specific
 if [ -r ${ZDOTDIR:-$HOME}/.zsh_aliases ]; then
-  source $ZDOTDIR:-$HOME}/.zsh_aliases
+  source ${ZDOTDIR:-$HOME}/.zsh_aliases
 fi
 
 export LOCATE_PATH=/var/db/locate.database
@@ -551,7 +551,7 @@ fi
 # Speed up autocomplete, force prefix mapping
 zstyle ':completion:*' accept-exact '*(N)'
 zstyle ':completion:*' use-cache on
-zstyle ':completion:*' cache-path $ZDOTDIR/.zcache
+zstyle ':completion:*' cache-path ${ZDOTDIR:-$HOME}/.zcache
 zstyle -e ':completion:*:default' list-colors 'reply=("${PREFIX:+=(#bi)($PREFIX:t)*==34=34}:${(s.:.)LS_COLORS}")';
 
 # Load any custom zsh completions we've installed

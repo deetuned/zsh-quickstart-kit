@@ -273,7 +273,7 @@ if [[ -f ${ZDOTDIR:-$HOME}/.zgen-setup ]]; then
   REAL_ZGEN_SETUP=${ZDOTDIR:-$HOME}/.zgen-setup
 fi
 if [[ -L ${ZDOTDIR:-$HOME}/.zgen-setup ]]; then
-  REAL_ZGEN_SETUP="$(readlink $ZDOTDIR/.zgen-setup)"
+  REAL_ZGEN_SETUP="$(readlink ${ZDOTDIR:-$HOME}/.zgen-setup)"
 fi
 
 # If you don't want my standard starter set of plugins, create a file named
