@@ -160,9 +160,9 @@ alias ..="cd .."
 alias ...="cd ../.."
 
 # Honor old .zsh_aliases.local customizations, but print depecation warning.
-if [ -f $ZDOTDIR/.zsh_aliases.local ]; then
+if [ -f ${ZDOTDIR:-$HOME}/.zsh_aliases.local ]; then
   # shellcheck disable=SC1090
-  source $ZDOTDIR/.zsh_aliases.local
+  source ${ZDOTDIR:-$HOME}/.zsh_aliases.local
   echo ".zsh_aliases.local is deprecated and will stop working after June 1st, 2022."
-  echo "Make entries in $ZDOTDIR/zshrc.d instead. See https://github.com/unixorn/zsh-quickstart-kit#zshrcd for more details."
+  echo "Make entries in ${ZDOTDIR:-$HOME}/.zshrc.d instead. See https://github.com/unixorn/zsh-quickstart-kit#zshrcd for more details."
 fi
