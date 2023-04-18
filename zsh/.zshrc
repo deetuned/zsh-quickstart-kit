@@ -346,7 +346,11 @@ if [[ -z "$SSH_CLIENT" ]] || can_haz keychain; then
   if [[ "$(_zqs-get-setting ssh-askpass-require)" == 'true' ]]; then
     zsh-quickstart-set-ssh-askpass-require
   fi
-  load-our-ssh-keys
+  
+  load_ssh_keys="$(_zqs-get-setting load-ssh-keys)"
+  if [[ "$load_ssh_keys" != "false" ]]; then
+    load-our-ssh-keys
+  fi
 fi
 
 # Load helper functions before we load zgenom setup
