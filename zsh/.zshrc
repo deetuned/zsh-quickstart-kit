@@ -133,8 +133,7 @@ _zqs-purge-setting() {
 }
 
 # Convert the old settings files into new style settings
-function _zqs-update-stale-settings-files() {
-  if [[ -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-use-bullet-train ]]; then
+_zqs-update-stale-settings-files() {
   # Convert .zqs-additional-plugins to new format
   if [[ -f "${ZDOTDIR:-$HOME}/.zqs/zqs-additional-plugins" ]]; then
     mkdir -p "${ZDOTDIR:-$HOME}/.zshrc.add-plugins.d"
@@ -154,7 +153,7 @@ function _zqs-update-stale-settings-files() {
   fi
   if [[ -f "${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-zmv" ]]; then
     _zqs-set-setting no-zmv true
-    rm -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-zmv
+    rm -f "${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-zmv"
     echo "Converted old ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-zmv to new settings system"
   fi
   # Don't break existing user setups, but transition to a zqs setting to reduce
@@ -175,7 +174,7 @@ function zsh-quickstart-select-bullet-train() {
 }
 
 function zsh-quickstart-select-powerlevel10k() {
-  rm -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-use-bullet-train
+  rm -f "${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-use-bullet-train"
   _zqs-set-setting powerlevel10k true
   _zqs-set-setting bullet-train false
   _zqs-trigger-init-rebuild
@@ -213,13 +212,13 @@ function _zqs-disable-zmv-autoloading() {
 }
 
 function zsh-quickstart-disable-omz-plugins() {
-  rm -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-omz
+  rm -f "${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-omz"
   _zqs-set-setting load-omz-plugins false
   _zqs-trigger-init-rebuild
 }
 
 function zsh-quickstart-enable-omz-plugins() {
-  rm -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-omz
+  rm -f "${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-omz"
   _zqs-set-setting load-omz-plugins true
   _zqs-trigger-init-rebuild
 }
