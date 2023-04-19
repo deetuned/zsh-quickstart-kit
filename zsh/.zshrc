@@ -40,11 +40,11 @@ fi
 
 # Valid font modes:
 # flat, awesome-patched, awesome-fontconfig, nerdfont-complete, nerdfont-fontconfig
-if [[ -r ~/.powerlevel9k_font_mode ]]; then
+if [[ -r "${ZDOTDIR:-$HOME}/.powerlevel9k_font_mode" ]]; then
   POWERLEVEL9K_MODE=$(head -1 ~/.powerlevel9k_font_mode)
 fi
 
-# Unset COMPLETION_WAITING_DOTS in a file in $ZDOTDIR/zshrc.d if you want red dots to be displayed while waiting for completion
+# Unset COMPLETION_WAITING_DOTS in a file in ${ZDOTDIR:-$HOME}/.zshrc.d if you want red dots to be displayed while waiting for completion
 export COMPLETION_WAITING_DOTS="true"
 
 # Create zsh-quickstart-kit config directory
@@ -64,6 +64,7 @@ export _ZQS_SETTINGS_DIR
 # them is likely to break things badly.
 
 _zqs-trigger-init-rebuild() {
+  rm -f ${XDG_DATA_HOME:-$HOME}/.zgen/init.zsh
   rm -f ${XDG_DATA_HOME:-$HOME}/.zgenom/init.zsh
 }
 
@@ -134,19 +135,33 @@ _zqs-purge-setting() {
 # Convert the old settings files into new style settings
 function _zqs-update-stale-settings-files() {
   if [[ -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-use-bullet-train ]]; then
+  # Convert .zqs-additional-plugins to new format
+  if [[ -f "${ZDOTDIR:-$HOME}/.zqs/zqs-additional-plugins" ]]; then
+    mkdir -p "${ZDOTDIR:-$HOME}/.zshrc.add-plugins.d"
+    sed -e 's/^./zgenom load &/' "${ZDOTDIR:-$HOME}/.zqs/zqs-additional-plugins" >> "${ZDOTDIR:-$HOME}/.zshrc.add-plugins.d/0000-transferred-plugins"
+    rm -f "${ZDOTDIR:-$HOME}/.zqs/zqs-additional-plugins"
+    echo "Plugins from .zqs-additional-plugins were moved to .zshrc.add-plugins.d/0000-transferred-plugins with a format change"
+  fi
+  if [[ -f "${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-use-bullet-train" ]]; then
     _zqs-set-setting bullet-train true
-    rm -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-use-bullet-train
+    rm -f "${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-use-bullet-train"
     echo "Converted old ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-use-bullet-train to new settings system"
   fi
-  if [[ -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-omz ]]; then
+  if [[ -f "${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-omz" ]]; then
     _zqs-set-setting load-omz-plugins false
-    rm -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-omz
+    rm -f "${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-omz"
     echo "Converted old ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-omz to new settings system"
   fi
-  if [[ -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-zmv ]]; then
+  if [[ -f "${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-zmv" ]]; then
     _zqs-set-setting no-zmv true
     rm -f ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-zmv
     echo "Converted old ${ZDOTDIR:-$HOME}/.zqs/zsh-quickstart-no-zmv to new settings system"
+  fi
+  # Don't break existing user setups, but transition to a zqs setting to reduce
+  # pollution in the user's environment.
+  if [[ -z "ZSH_QUICKSTART_SKIP_TRAPINT" ]]; then
+    echo "'ZSH_QUICKSTART_SKIP_TRAPINT' is deprecated in favor of running 'zqs disable-control-c-decorator' to write a settings knob."
+    zqs-quickstart-disable-control-c-decorator
   fi
 }
 
@@ -175,6 +190,18 @@ function zsh-quickstart-disable-bindkey-handling() {
 
 function zsh-quickstart-enable-bindkey-handling() {
   _zqs-set-setting handle-bindkeys true
+}
+
+function zqs-quickstart-disable-control-c-decorator() {
+  _zqs-set-setting control-c-decorator false
+  echo "Disabled the control-c decorator in future zsh sessions."
+  echo "You can re-enable the quickstart's control-c decorator by running 'zqs enable-control-c-decorator'"
+}
+
+function zqs-quickstart-enable-control-c-decorator() {
+  echo "The control-c decorator is enabled for future zsh sessions."
+  echo "You can disable the quickstart's control-c decorator by running 'zqs disable-control-c-decorator'"
+  _zqs-set-setting control-c-decorator true
 }
 
 function _zqs-enable-zmv-autoloading() {
@@ -231,7 +258,7 @@ unsetopt correctall
 PATH="$PATH:/sbin:/usr/sbin:/bin:/usr/bin"
 
 # If you need to add extra directories to $PATH that are not checked for
-# here, add a file in $ZDOTDIR/zshrc.d - then you won't have to maintain a
+# here, add a file in ${ZDOTDIR:-$HOME}/.zshrc.d - then you won't have to maintain a
 # fork of the kit.
 
 # Conditional PATH additions
@@ -259,7 +286,7 @@ do
 done
 export PATH
 
-# We will dedupe $PATH after loading $ZDOTDIR/zshrc.d/* so that any duplicates
+# We will dedupe $PATH after loading ${ZDOTDIR:-$HOME}/.zshrc.d/* so that any duplicates
 # added there get deduped too.
 
 # Deal with brew if it's installed. Note - brew can be installed outside
@@ -286,23 +313,26 @@ if [[ -z "$LS_COLORS" ]]; then
 fi
 
 load-our-ssh-keys() {
-  # If keychain is installed let it take care of ssh-agent, else do it manually
+  if can_haz op; then export SSH_AUTH_SOCK=~/Library/Group\ Containers/2BUA8C4S2C.com.1password/t/agent.sock
+  else
+    # If keychain is installed let it take care of ssh-agent, else do it manually
   if can_haz keychain; then
     eval `keychain -q --eval`
   else
     if [ -z "$SSH_AUTH_SOCK" ]; then
-      # If user has keychain installed, let it take care of ssh-agent, else do it manually
+       # If user has keychain installed, let it take care of ssh-agent, else do it manually
       # Check for a currently running instance of the agent
-      RUNNING_AGENT="$(ps -ax | grep 'ssh-agent -s' | grep -v grep | wc -l | tr -d '[:space:]')"
-      if [ "$RUNNING_AGENT" = "0" ]; then
-        if [ ! -d ~/.ssh ] ; then
+       RUNNING_AGENT="$(ps -ax | grep 'ssh-agent -s' | grep -v grep | wc -l | tr -d '[:space:]')"
+       if [ "$RUNNING_AGENT" = "0" ]; then
+          if [ ! -d ~/.ssh ] ; then
           mkdir -p ~/.ssh
         fi
         # Launch a new instance of the agent
-        ssh-agent -s &> ~/.ssh/ssh-agent
+          ssh-agent -s &> ~/.ssh/ssh-agent
+       fi
+       eval $(cat ~/.ssh/ssh-agent)
       fi
-      eval $(cat ~/.ssh/ssh-agent)
-    fi
+  fi
   fi
 
   local key_manager=ssh-add
@@ -394,7 +424,7 @@ fi
 
 # Set some history options
 #
-# You can customize these by putting a file in $ZDOTDIR/zshrc.d with
+# You can customize these by putting a file in ${ZDOTDIR:-$HOME}/.zshrc.d with
 # different settings - those files are loaded later specifically to
 # make overriding these (and things set by plugins) easy without having
 # to maintain a fork.
@@ -418,8 +448,10 @@ setopt share_history
 # adding a file to ~/.zshrc.d that changes these variables.
 HISTSIZE=100000
 SAVEHIST=100000
-HISTFILE="${ZDOTDIR:-$HOME}/.zhistory"
-export HISTIGNORE="ls:cd:cd -:pwd:exit:date:* --help"
+HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
+
+#ZSH Man page referencing the history_ignore parameter - https://manpages.ubuntu.com/manpages/kinetic/en/man1/zshparam.1.html
+HISTORY_IGNORE="(cd ..|l[s]#( *)#|pwd *|exit *|date *|* --help)"
 
 # Set some options about directories
 setopt pushd_ignore_dups
@@ -447,7 +479,7 @@ REPORTTIME=2
 TIMEFMT="%U user %S system %P cpu %*Es total"
 
 # How often to check for an update. If you want to override this, the
-# easiest way is to add a script fragment in $ZDOTDIR/zshrc.d that unsets
+# easiest way is to add a script fragment in ${ZDOTDIR:-$HOME}/zshrc.d that unsets
 # QUICKSTART_KIT_REFRESH_IN_DAYS.
 QUICKSTART_KIT_REFRESH_IN_DAYS=7
 
@@ -543,7 +575,12 @@ if can_haz exa; then
     EXA_TREE_IGNORE=".cache|cache|node_modules|vendor|.git"
   fi
 
-  alias l='exa -al --icons --git --time-style=long-iso --group-directories-first --color-scale'
+  if [[ "$(exa --help | grep -c git)" == 0 ]]; then
+    # Not every linux exa build has git support compiled in
+    alias l='exa -al --icons --time-style=long-iso --group-directories-first --color-scale'
+  else
+    alias l='exa -al --icons --git --time-style=long-iso --group-directories-first --color-scale'
+  fi
   alias ls='exa --group-directories-first'
 
   # Don't step on system-installed tree command
@@ -559,11 +596,11 @@ zstyle ':completion:*' cache-path ${ZDOTDIR:-$HOME}/.zcache
 zstyle -e ':completion:*:default' list-colors 'reply=("${PREFIX:+=(#bi)($PREFIX:t)*==34=34}:${(s.:.)LS_COLORS}")';
 
 # Load any custom zsh completions we've installed
-if [[ -d ${ZDOTDIR:-$HOME}/.zsh-completions.d ]]; then
-  load-shell-fragments ${ZDOTDIR:-$HOME}/.zsh-completions.d
+if [[ -d "${ZDOTDIR:-$HOME}/.zsh-completions.d" ]]; then
+  load-shell-fragments "${ZDOTDIR:-$HOME}/.zsh-completions.d"
 fi
-if [[ -d ${ZDOTDIR:-$HOME}/.zsh-completions ]]; then
-  echo '($ZDOTDIR|$HOME)/.zsh_completions is deprecated in favor of ($ZDOTDIR|$HOME}/.zsh_completions.d'
+if [[ -d "${ZDOTDIR:-$HOME}/.zsh-completions" ]]; then
+  echo "${ZDOTDIR:-$HOME}/.zsh_completions is deprecated in favor of ${ZDOTDIR:-$HOME}/.zsh_completions.d"
   load-shell-fragments ${ZDOTDIR:-$HOME}/.zsh-completions
 fi
 
@@ -573,9 +610,9 @@ if [[ $(_zqs-get-setting no-zmv false) == 'false' ]]; then
 fi
 
 # Make it easy to append your own customizations that override the
-# quickstart's defaults by loading all files from the $ZDOTDIR/zshrc.d directory
-mkdir -p ${ZDOTDIR:-$HOME}/.zshrc.d
-load-shell-fragments ${ZDOTDIR:-$HOME}/.zshrc.d
+# quickstart's defaults by loading all files from the ${ZDOTDIR:-$HOME}/zshrc.d directory
+mkdir -p "${ZDOTDIR:-$HOME}/.zshrc.d"
+load-shell-fragments "${ZDOTDIR:-$HOME}/.zshrc.d"
 
 # If GOPATH is defined, add it to $PATH
 if [[ -n "$GOPATH" ]]; then
@@ -591,11 +628,11 @@ typeset -aU path;
 # If desk is installed, load the Hook for desk activation
 [[ -n "$DESK_ENV" ]] && source "$DESK_ENV"
 
-# Do selfupdate checking. We do this after processing $ZDOTDIR/zshrc.d to make the
+# Do selfupdate checking. We do this after processing ${ZDOTDIR:-$HOME}/zshrc.d to make the
 # refresh check interval easier to customize.
 #
 # If they unset QUICKSTART_KIT_REFRESH_IN_DAYS in one of the fragments
-# in $ZDOTDIR/zshrc.d, then we don't do any selfupdate checking at all.
+# in ${ZDOTDIR:-$HOME}/.zshrc.d, then we don't do any selfupdate checking at all.
 
 _load-lastupdate-from-file() {
   local now=$(date +%s)
@@ -609,12 +646,13 @@ _load-lastupdate-from-file() {
 }
 
 _update-zsh-quickstart() {
-  if [[ ! -L ${ZDOTDIR:-$HOME}/.zshrc ]]; then
+  local _zshrc_loc="${ZDOTDIR:-$HOME}/.zshrc"
+  if [[ ! -L "${_zshrc_loc}" ]]; then
     echo ".zshrc is not a symlink, skipping zsh-quickstart-kit update"
   else
-    local _link_loc=$(readlink ${ZDOTDIR:-$HOME}/.zshrc);
+    local _link_loc=${_zshrc_loc:A};
     if [[ "${_link_loc/${ZDOTDIR:-$HOME}}" == "${_link_loc}" ]]; then
-      pushd $(dirname "${ZDOTDIR:-$HOME}/$(readlink ${ZDOTDIR:-$HOME}/.zshrc)");
+      pushd $(dirname "${ZDOTDIR:-$HOME}/${_zshrc_loc:A}");
     else
       pushd $(dirname ${_link_loc});
     fi;
@@ -685,7 +723,7 @@ if [[ $(_zqs-get-setting list-ssh-keys true) == 'true' ]]; then
   echo
 fi
 
-if [[ -z "ZSH_QUICKSTART_SKIP_TRAPINT" ]]; then
+if [[ $(_zqs-get-setting control-c-decorator 'true') == 'true' ]]; then
   # Original source: https://vinipsmaker.wordpress.com/2014/02/23/my-zsh-config/
   # bash prints ^C when you're typing a command and control-c to cancel, so it
   # is easy to see it wasn't executed. By default, ZSH doesn't print the ^C.
@@ -712,10 +750,13 @@ function zqs-help() {
   echo "zqs selfupdate - Force an immediate update of the quickstart kit"
   echo "zqs update - Update the quickstart kit and all your plugins"
   echo "zqs update-plugins - Update your plugins"
+  echo "zqs cleanup - Cleanup unused plugins after removing them from the list"
   echo ""
   echo "Quickstart settings commands:"
   echo "zqs disable-bindkey-handling - Set the quickstart to not touch any bindkey settings. Useful if you're using another plugin to handle it."
-  echo "zqs enable-bindkey-handling - Set the quickstart to confingure your bindkey settings. Default behavior."
+  echo "zqs enable-bindkey-handling - Set the quickstart to configure your bindkey settings. Default behavior."
+  echo "zqs enable-control-c-decorator - Creates a TRAPINT function to display '^C' when you type control-c instead of being silent. Default behavior."
+  echo "zqs disable-control-c-decorator - No longer creates a TRAPINT function to display '^C' when you type control-c."
   echo "zqs disable-omz-plugins - Set the quickstart to not load oh-my-zsh plugins if you're using the standard plugin list"
   echo "zqs enable-omz-plugins - Set the quickstart to load oh-my-zsh plugins if you're using the standard plugin list"
   echo "zqs enable-ssh-askpass-require - Set the quickstart to prompt for your ssh passphrase on the command line."
@@ -740,6 +781,13 @@ function zqs() {
     'enable-bindkey-handling')
       zsh-quickstart-enable-bindkey-handling
       ;;
+    'disable-control-c-decorator')
+      zqs-quickstart-disable-control-c-decorator
+      ;;
+    'enable-control-c-decorator')
+      zqs-quickstart-enable-control-c-decorator
+      ;;
+
     'disable-zmv-autoloading')
       _zqs-disable-zmv-autoloading
       ;;
@@ -773,6 +821,9 @@ function zqs() {
       ;;
     'update-plugins')
       zgenom update
+      ;;
+    'cleanup')
+      zgenom clean
       ;;
     'delete-setting')
       shift

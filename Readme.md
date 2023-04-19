@@ -28,6 +28,8 @@
       - [zqs-disable-bindkey-handling](#zqs-disable-bindkey-handling)
       - [zqs-enable-bindkey-handling](#zqs-enable-bindkey-handling)
       - [zqs disable-omz-plugins](#zqs-disable-omz-plugins)
+      - [zqs enable-control-c-decorator](#zqs-enable-control-c-decorator)
+      - [zqs disable-control-c-decorator](#zqs-disable-control-c-decorator)
       - [zqs enable-omz-plugins](#zqs-enable-omz-plugins)
       - [zqs enable-ssh-askpass-require](#zqs-enable-ssh-askpass-require)
       - [zqs disable-ssh-askpass-require](#zqs-disable-ssh-askpass-require)
@@ -38,6 +40,7 @@
       - [zqs selfupdate](#zqs-selfupdate)
       - [zqs update](#zqs-update)
       - [zqs update-plugins](#zqs-update-plugins)
+      - [zqs cleanup](#zqs-cleanup)
       - [zqs get-setting](#zqs-get-setting)
       - [zqs set-setting](#zqs-set-setting)
       - [zqs delete-setting](#zqs-delete-setting)
@@ -47,6 +50,8 @@
   - [ZSH options](#zsh-options)
   - [Self-update Settings](#self-update-settings)
   - [Customizing the plugin list](#customizing-the-plugin-list)
+    - [Using fragment files](#using-fragment-files)
+    - [Complete plugin list replacement](#complete-plugin-list-replacement)
   - [Disabling zmv](#disabling-zmv)
   - [Disabling oh-my-zsh](#disabling-oh-my-zsh)
 - [FAQ](#faq)
@@ -57,6 +62,7 @@
   - [GNU stow is warning that stowing zsh would cause conflicts](#gnu-stow-is-warning-that-stowing-zsh-would-cause-conflicts)
   - [_arguments:comparguments:325: can only be called from completion function](#_argumentscomparguments325-can-only-be-called-from-completion-function)
   - [Could not open a connection to your authentication agent](#could-not-open-a-connection-to-your-authentication-agent)
+  - [I want to pin a plugin version](#i-want-to-pin-a-plugin-version)
 - [Other Resources](#other-resources)
   - [ZSH](#zsh)
   - [Dotfiles in general](#dotfiles-in-general)
@@ -101,6 +107,7 @@ To enable the enhanced history search, you'll need to install [fzf](https://gith
 
 #### macOS
 
+<details><summary>macOS instructions</summary>
 1. Download iTerm2 from [http://www.iterm2.com](http://www.iterm2.com) (optional). In my opinion, it is considerably nicer than the stock Terminal application that comes with macOS. There is an RCE flaw in all versions of iTerm 2 before 3.3.6, so update if you're using an affected version.
 2. Install the current version of Homebrew from [http://brew.sh/](http://brew.sh/).
 3. Install GNU Stow with `brew install stow`
@@ -115,9 +122,11 @@ To enable the enhanced history search, you'll need to install [fzf](https://gith
     1. In iTerm 2, go to Preferences->Profile in your iTerm 2 preferences, then select one of the Powerline-compatible fonts you just installed.
     2. **Make sure you also specify a Powerline-compatible font for non-ASCII in your iTerm 2 preferences or the prompt separators and branch glyphs will show up garbled**.
 7. Install `fzf` with `brew install fzf`
+</details>
 
 #### Linux
 
+<details><summary>Linux instructions</summary>
 1. Switch your shell to `zsh` with `chsh -s /bin/zsh`
 2. Install GNU Stow - `sudo yum install -y stow` on Red Hat / CentOS systems, `sudo apt-get -y install stow` on Debian / Ubuntu.
 3. Install `fzf` - `sudo apt-get install -y fzf` on Debian / Ubuntu, do a manual install on Red Hat / Centos - instructions are at [fzf](https://github.com/junegunn/fzf).
@@ -131,6 +140,7 @@ If the Powerline symbols can't be seen or are garbled, try closing all instances
 If you still can’t see the new fonts, confirm that the font has been installed to a valid X font path.
 
 If you get garbled branch glyphs, make sure there isn't a separate font setting for non-ASCII characters in your terminal application that you also need to set to use a Powerline-compatible font. Konsole needs to be set to use UTF-8 encoding, for example.
+</details>
 
 ### Set up Zgenom and the starter kit
 
@@ -168,6 +178,7 @@ The zsh-quickstart-kit configures your ZSH environment so that it includes:
 
 * [chrissicool/zsh-256color](https://github.com/chrissicool/zsh-256color) - Sets your terminal to 256 colors if available.
 * [djui/alias-tips](https://github.com/djui/alias-tips) - Warns you when you have an alias for the command you just typed and tells you what it is.
+* [eventi/noreallyjustfuckingstopalready](https://github.com/eventi/noreallyjustfuckingstopalready)- Deals with Apple's squirrelly DNS resolver. Only loads when you're running on macOS.
 * [peterhurford/git-it-on.zsh](https://github.com/peterhurford/git-it-on.zsh) - Opens your current repository on GitHub, in your current branch.
 * [robSis/zsh-completion-generator](https://github.com/RobSis/zsh-completion-generator) - Adds a tool to generate ZSH completion functions for programs missing them by parsing their `--help` output. Note that this doesn't happen dynamically; you'll have to explicitly run it to create a completion for each command missing one.
 * [sharat87/pip-app](https://github.com/sharat87/pip-app) - A set of shell functions to make it easy to install small apps and utilities distributed with `pip`.
@@ -214,7 +225,7 @@ Running the following commands will toggle behavior the next time you start a sh
   * `zsh-quickstart-select-powerlevel10k` -  Switch to the [powerlevel10k](https://github.com/romkatv/powerlevel10k) prompt now used as the kit's default.
   * `zsh-quickstart-select-bullet-train` - Switch back to the [bullet-train](https://github.com/caiogondim/bullet-train.zsh) prompt originally used in the kit.
 * You can disable printing the list of `ssh` keys by executing `zqs disable-ssh-key-listing`.
-* `bash` prints `^C` when you're typing a command and control-c to cancel, so it is easy to see it wasn't executed. By default, ZSH doesn't print the `^C`. I like seeing the `^C`, so by default, the quickstart traps `SIGINT` and prints the `^C`. You can disable this by exporting `ZSH_QUICKSTART_SKIP_TRAPINT='false'` in one of the files in `~/.zshrc.d`.
+* `bash` prints `^C` when you're typing a command and hit control-c to cancel it, so it is easy to see it wasn't executed. By default, ZSH doesn't print the `^C`. I prefer seeing the `^C`, so by default, the quickstart traps `SIGINT` and prints the `^C`. You can disable this behavior by running `zqs enable-control-c-decorator`.
 
 #### zqs
 
@@ -235,6 +246,14 @@ Let the quickstart's `.zshrc` configure `bindkey` setup and alias expansion. Thi
 ##### zqs disable-omz-plugins
 
 Set the quickstart to not include any oh-my-zsh plugins from the standard plugin list. Loading omz plugins can make terminal startup significantly slower.
+
+##### zqs enable-control-c-decorator
+
+Set the quickstart to create a `TRAPINT` handler in future `zsh` sessions to also display control-C when you type control-c. This is the default behavior.
+
+##### zqs disable-control-c-decorator
+
+Set the quickstart to not create the `TRAPINT` handler to display control-C when you type control-c in future `zsh` sessions.
 
 ##### zqs enable-omz-plugins
 
@@ -275,6 +294,10 @@ Update the quickstart kit and all your plugins.
 ##### zqs update-plugins
 
 Updates all your plugins.
+
+##### zqs cleanup
+
+Cleanup unused plugins after removing them from the list
 
 ##### zqs get-setting
 
@@ -320,19 +343,21 @@ The quickstart kit will automatically check for updates every seven days. If you
 
 I've included what I think is a good starter set of ZSH plugins in this repository. However, everyone has their preferences for their environment.
 
-There are two main ways to customize the list.
+To make things easier to customize without users having to maintain their own forks, the kit provides two ways to customize the list of plugins it will load.
 
-You can either add a new plugin to `~/.zqs-additional-plugins`, or you can make a `~/.zsh-quickstart-local-plugin` file.
+You can either add a fragment file to `~/.zshrc.add-plugins.d`, or you can make a `~/.zsh-quickstart-local-plugin` file.
 
-If you're just adding plugins to the standard list and want to automatically get any new changes I make to that standard list (new plugins, new locations when existing plugins are moved, etc) then adding a file called `~/.zqs-additional-plugins` with entries like `githubuser/pluginrepo` is the way to go - the kit will load its plugins, then add yours on the end. The file will be read line by line, and each line passed directly to `zgenom load`.
+#### Using fragment files
 
-If you don't care about changes to the kit's plugins, then go with creating a `~/.zsh-quickstart-local-plugin` file.
+If all you want to do is add plugins to the standard list and you want to still automatically get any new changes I make to that standard list (new plugins, new locations when existing plugins are moved, etc) then adding a file into `~/.zshrc.add-plugins.d` with your extra plugins listed as `zgenom load githubuser/pluginrepo` (one line per plugin) is the way to go. The kit will load its plugins, then add yours on the end. You can add separate files with plugins in the `~/.zshrc.add-plugins.d` directory - my personal use case is having one file with all the plugins I use everywhere, and one that has extra plugins I only need on my work machines. This is the easiest option.
 
-To make the list easier to customize without having to maintain a separate fork of the quickstart kit, if you create a file named `~/.zsh-quickstart-local-plugins`, the `.zshrc` from this starter kit will source that **instead** of running the `load-starter-plugin-list` function defined in `~/.zgen-setup`.
+#### Complete plugin list replacement
 
-**Using `~/.zsh-quickstart-local-plugins` is not additive. It will *completely replace* the kit-provided list of plugins.**
+If you don't care about future changes to the kit's plugins and want to fully replace the built-in list, then create a `~/.zsh-quickstart-local-plugins` file. When the kit detects a file named `~/.zsh-quickstart-local-plugins`, its `.zshrc` will source that **instead** of running the `load-starter-plugin-list` function defined in `~/.zgen-setup`.
 
-I realize that it would be a pain to create `.zsh-quickstart-local-plugins` from scratch, so to make customizing your plugins easier, I've included a `.zsh-quickstart-local-plugins-example` file at the root of the repository that will install the same plugin list that the kit does by default that you can use as a starting point for your own customizations.
+**Using `~/.zsh-quickstart-local-plugins` is not additive. It will *completely replace* the kit-provided list of plugins.** If you want to just add more plugins, use the fragment file method above.
+
+Creating a `.zsh-quickstart-local-plugins` from scratch is a pain, so to make customizing your plugin list easier, I've included a `.zsh-quickstart-local-plugins-example` file at the root of the repository that installs the same plugin list that the kit does by default that you can use as a starting point for your own `.zsh-quickstart-local-plugins` file.
 
 Copy that to your `$HOME/.zsh-quickstart-local-plugins`, change the list, and the next time you start a terminal session, you'll get your plugin list loaded instead of the kit's defaults.
 
